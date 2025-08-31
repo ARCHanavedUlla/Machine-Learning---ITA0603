@@ -1,0 +1,35 @@
+
+
+def findS(training_data, target):
+    """
+    training_data: List of training examples where each example is (attributes, label)
+    target: The target concept label (e.g., 'Yes' means positive example)
+    """
+    # Initialize hypothesis as the most specific possible
+    hypothesis = ['0'] * len(training_data[0][0])
+
+    print("Initial Hypothesis:", hypothesis)
+
+    for attributes, label in training_data:
+        if label == target:  # Only consider positive examples
+            for i in range(len(hypothesis)):
+                if hypothesis[i] == '0':   # First time setting
+                    hypothesis[i] = attributes[i]
+                elif hypothesis[i] != attributes[i]:  # Conflict → generalize
+                    hypothesis[i] = '?'
+
+        print(f"Updated Hypothesis after {attributes} → {label}: {hypothesis}")
+
+    return hypothesis
+
+training_data = [
+    (['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same'], 'Yes'),
+    (['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same'], 'Yes'),
+    (['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change'], 'No'),
+    (['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change'], 'Yes')
+]
+
+print("\n--- Running FIND-S Algorithm ---")
+final_hypothesis = findS(training_data, target='Yes')
+
+print("\nFinal Most Specific Hypothesis:", final_hypothesis)
