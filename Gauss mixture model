@@ -1,0 +1,37 @@
+# Expectation Maximization (EM) for Gaussian Mixture
+import numpy as np
+from sklearn.datasets import make_blobs
+
+# Generate synthetic dataset
+X, _ = make_blobs(n_samples=300, centers=2, cluster_std=1.0, random_state=42)
+
+# Initialize parameters
+np.random.seed(42)
+n, d = X.shape
+k = 2  # number of clusters
+means = X[np.random.choice(n, k, False)]
+covariances = [np.eye(d)] * k
+weights = np.ones(k) / k
+
+def gaussian(x, mean, cov):
+    return np.exp(-0.5 * (x - mean).T @ np.linalg.inv(cov) @ (x - mean)) / \
+           (2 * np.pi * np.sqrt(np.linalg.det(cov)))
+
+# EM algorithm
+for step in range(20):
+    # E-step: responsibilities
+    resp = np.zeros((n, k))
+    for i in range(n):
+        for j in range(k):
+            resp[i, j] = weights[j] * gaussian(X[i], means[j], covariances[j])
+        resp[i] /= np.sum(resp[i])
+    
+    # M-step: update params
+    Nk = np.sum(resp, axis=0)
+    for j in range(k):
+        means[j] = np.sum(resp[:, j].reshape(-1,1) * X, axis=0) / Nk[j]
+        covariances[j] = np.cov(X.T, aweights=resp[:, j], bias=True)
+        weights[j] = Nk[j] / n
+
+print("Final means:", means)
+print("Final weights:", weights)
