@@ -1,0 +1,33 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from collections import Counter
+
+# Euclidean distance
+def euclidean(a, b):
+    return np.sqrt(np.sum((a - b) ** 2))
+
+# KNN algorithm
+def knn_predict(X_train, y_train, X_test, k=3):
+    predictions = []
+    for x in X_test:
+        distances = [euclidean(x, x_train) for x_train in X_train]
+        k_indices = np.argsort(distances)[:k]
+        k_labels = [y_train[i] for i in k_indices]
+        predictions.append(Counter(k_labels).most_common(1)[0][0])
+    return predictions
+
+# Load dataset (Iris)
+from sklearn.datasets import load_iris
+iris = load_iris()
+X, y = iris.data, iris.target
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Predict
+y_pred = knn_predict(X_train, y_train, X_test, k=5)
+
+# Accuracy
+accuracy = np.mean(y_pred == y_test)
+print("KNN Accuracy:", accuracy)
