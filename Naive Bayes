@@ -1,0 +1,47 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, accuracy_score
+
+class NaiveBayes:
+    def fit(self, X, y):
+        self.classes = np.unique(y)
+        self.mean = {}
+        self.var = {}
+        self.prior = {}
+        for c in self.classes:
+            X_c = X[y == c]
+            self.mean[c] = X_c.mean(axis=0)
+            self.var[c] = X_c.var(axis=0)
+            self.prior[c] = X_c.shape[0] / X.shape[0]
+
+    def predict(self, X):
+        y_pred = [self._predict(x) for x in X]
+        return np.array(y_pred)
+
+    def _predict(self, x):
+        posteriors = []
+        for c in self.classes:
+            prior = np.log(self.prior[c])
+            likelihood = -0.5 * np.sum(np.log(2 * np.pi * self.var[c]))
+            likelihood -= 0.5 * np.sum(((x - self.mean[c]) ** 2) / self.var[c])
+            posterior = prior + likelihood
+            posteriors.append(posterior)
+        return self.classes[np.argmax(posteriors)]
+
+# Load dataset (Iris again)
+from sklearn.datasets import load_iris
+iris = load_iris()
+X, y = iris.data, iris.target
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Train Naive Bayes
+nb = NaiveBayes()
+nb.fit(X_train, y_train)
+y_pred = nb.predict(X_test)
+
+# Evaluate
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("Accuracy:", accuracy_score(y_test, y_pred))
