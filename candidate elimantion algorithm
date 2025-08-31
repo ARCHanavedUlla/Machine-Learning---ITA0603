@@ -1,0 +1,66 @@
+import pandas as pd
+
+def candidate_elimination_algorithm(data):
+    # Separate attributes and target column
+    attributes = data.iloc[:, :-1].values
+    target = data.iloc[:, -1].values
+
+    # Initialize Specific hypothesis (S) and General hypothesis (G)
+    S = ['0'] * len(attributes[0])   # most specific
+    G = [['?'] * len(attributes[0])] # most general
+
+    print("Initial S:", S)
+    print("Initial G:", G)
+    print("----------------------------------------------------")
+
+    for i, instance in enumerate(attributes):
+        if target[i] == "Yes":   # Positive example
+            # Update S
+            for j in range(len(S)):
+                if S[j] == '0':
+                    S[j] = instance[j]
+                elif S[j] != instance[j]:
+                    S[j] = '?'
+            # Remove inconsistent G
+            G = [g for g in G if all(s == g[j] or g[j] == '?' for j, s in enumerate(S))]
+
+        else:  # Negative example
+            new_G = []
+            for g in G:
+                for j in range(len(g)):
+                    if g[j] == '?':
+                        if S[j] != '?':
+                            new_hypothesis = g.copy()
+                            new_hypothesis[j] = S[j]
+                            if new_hypothesis not in new_G:
+                                new_G.append(new_hypothesis)
+            G = new_G
+
+        print(f"Example {i+1}: {instance}, Target: {target[i]}")
+        print("S:", S)
+        print("G:", G)
+        print("----------------------------------------------------")
+
+    return S, G
+
+
+# ---------------- DEMO ----------------
+# Sample dataset (EnjoySport)
+data_dict = {
+    'Sky':      ['Sunny', 'Sunny', 'Rainy', 'Sunny'],
+    'Temp':     ['Warm', 'Warm', 'Cold',  'Warm'],
+    'Humidity': ['Normal','High', 'High', 'High'],
+    'Wind':     ['Strong','Strong','Strong','Strong'],
+    'Water':    ['Warm',  'Warm',  'Warm', 'Cool'],
+    'Forecast': ['Same',  'Same',  'Change','Change'],
+    'EnjoySport':['Yes',   'Yes',   'No',   'Yes']
+}
+
+# Convert to DataFrame (this mimics loading from CSV)
+data = pd.DataFrame(data_dict)
+
+# Run Candidate-Elimination Algorithm
+S_final, G_final = candidate_elimination_algorithm(data)
+
+print("\n✅ Final Specific Hypothesis (S):", S_final)
+print("✅ Final General Hypotheses (G):", G_final)
