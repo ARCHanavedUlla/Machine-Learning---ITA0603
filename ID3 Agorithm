@@ -1,0 +1,116 @@
+import math
+import pandas as pd
+
+# --------------------
+# Entropy Calculation
+# --------------------
+def entropy(target_col):
+    elements, counts = np.unique(target_col, return_counts=True)
+    entropy_val = 0
+    for i in range(len(elements)):
+        p = counts[i]/np.sum(counts)
+        entropy_val += -p*np.log2(p)
+    return entropy_val
+
+# --------------------
+# Information Gain
+# --------------------
+def info_gain(data, split_attr, target_name="PlayTennis"):
+    # Total entropy
+    total_entropy = entropy(data[target_name])
+
+    # Values of attribute
+    vals, counts = np.unique(data[split_attr], return_counts=True)
+
+    # Weighted entropy after split
+    weighted_entropy = 0
+    for i in range(len(vals)):
+        subset = data[data[split_attr] == vals[i]]
+        weighted_entropy += (counts[i]/np.sum(counts)) * entropy(subset[target_name])
+
+    # Info gain = entropy before - entropy after
+    return total_entropy - weighted_entropy
+
+# --------------------
+# ID3 Algorithm
+# --------------------
+def ID3(data, original_data, features, target_name="PlayTennis", parent_node_class=None):
+    # If all target values are the same → return that class
+    if len(np.unique(data[target_name])) <= 1:
+        return np.unique(data[target_name])[0]
+
+    # If dataset is empty → return majority class from original data
+    elif len(data) == 0:
+        return np.unique(original_data[target_name])[np.argmax(np.unique(original_data[target_name], return_counts=True)[1])]
+
+    # If no features left → return parent majority
+    elif len(features) == 0:
+        return parent_node_class
+
+    else:
+        # Parent majority class
+        parent_node_class = np.unique(data[target_name])[np.argmax(np.unique(data[target_name], return_counts=True)[1])]
+
+        # Choose best feature
+        gains = [info_gain(data, feature, target_name) for feature in features]
+        best_feature = features[np.argmax(gains)]
+
+        # Create tree
+        tree = {best_feature: {}}
+
+        # Remove chosen feature
+        remaining_features = [f for f in features if f != best_feature]
+
+        # Grow branches
+        for val in np.unique(data[best_feature]):
+            subset = data[data[best_feature] == val]
+            subtree = ID3(subset, data, remaining_features, target_name, parent_node_class)
+            tree[best_feature][val] = subtree
+
+        return tree
+
+# --------------------
+# Predict Function
+# --------------------
+def predict(query, tree, default=None):
+    for key in list(query.keys()):
+        if key in tree.keys():
+            try:
+                result = tree[key][query[key]]
+            except:
+                return default
+
+            if isinstance(result, dict):
+                return predict(query, result)
+            else:
+                return result
+
+
+# --------------------
+# DEMO DATASET
+# --------------------
+import numpy as np
+
+data = {
+    'Outlook': ['Sunny','Sunny','Overcast','Rain','Rain','Rain','Overcast','Sunny','Sunny','Rain','Sunny','Overcast','Overcast','Rain'],
+    'Temperature': ['Hot','Hot','Hot','Mild','Cool','Cool','Cool','Mild','Cool','Mild','Mild','Mild','Hot','Mild'],
+    'Humidity': ['High','High','High','High','Normal','Normal','Normal','High','Normal','Normal','Normal','High','Normal','High'],
+    'Wind': ['Weak','Strong','Weak','Weak','Weak','Strong','Strong','Weak','Weak','Weak','Strong','Strong','Weak','Strong'],
+    'PlayTennis': ['No','No','Yes','Yes','Yes','No','Yes','No','Yes','Yes','Yes','Yes','Yes','No']
+}
+
+df = pd.DataFrame(data)
+
+# --------------------
+# Run ID3
+# --------------------
+features = list(df.columns[:-1])
+tree = ID3(df, df, features, target_name="PlayTennis")
+print("Decision Tree:", tree)
+
+# --------------------
+# Test with a new sample
+# --------------------
+query = {'Outlook': 'Sunny', 'Temperature': 'Cool', 'Humidity': 'High', 'Wind': 'Strong'}
+prediction = predict(query, tree, default="Yes")
+print("Classification for sample", query, "→", prediction)
